@@ -1,0 +1,3 @@
+this code is running off: /gws/nopw/j04/dcmex/users/ezriab/cp-of-Jaffeux-22
+
+just its easier for me to run scrips from here
