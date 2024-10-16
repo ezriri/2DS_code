@@ -1,0 +1,4 @@
+! notes about cleaning and seperate !
+2D-S and HVPS have different dimensions i.e.
+2ds "ImageData": shape (128, 2400000), "ImageTimes": shape (200000, 3)
+hvps "ImageData": shape (128, 200000), "ImageTimes": shape (100000, 3)
