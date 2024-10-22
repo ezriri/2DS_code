@@ -1,3 +1,5 @@
+## this is from https://github.com/seboshea/OAPmodel/blob/main/ModelOAP_response.py
+## STATS for images
 # -*- coding: utf-8 -*-
 
 # Model optical array probe response from 2D binary shape at different Z (position between arms)
