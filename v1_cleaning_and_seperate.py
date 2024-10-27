@@ -1,3 +1,4 @@
+## V1
 ### python script for extracting stats about specified h5 files
 # 4. h5 -> seperate particles -> cleaning -> png images !
 
@@ -36,14 +37,14 @@ path_h5_hvps = '/gws/nopw/j04/dcmex/users/ezriab/raw_h5/hvps/'
 base_save_path = '/gws/nopw/j04/dcmex/users/ezriab/'
 # - # - # - # - # - # - # - # - # - # - # - # - EDIT BITS # - # - # - # - # - # -# - # - # - # - # - # -# - #
 
-path = path_h5_hvps #################### edit depending on 2ds channel / probe ##############################
+path = path_h5_ds_0 #################### edit depending on 2ds channel / probe ##############################
 ## setting thresholds / res for attaining good particle final images
 fill_hole_threshold = 5 # max number pixels contained within particle that is filled in
 
-minimum_area = 10 # very quick metric to stop the processing of particles with area < 15 pixels
-# like 2ds - choose 10 pixel min (even though paper = trained on 20 plus)
-length_threshold = 1500 #300 # mu - need this minimum length of max dimension to extract the particle
-pixel_resolution = 150 # mu
+minimum_area = 15 # very quick metric to stop the processing of particles with area < 15 pixels
+
+length_threshold = 100 #300 # mu - need this minimum length of max dimension to extract the particle
+pixel_resolution = 10 # mu
 desired_image_size = 200 # (assume we want a square image) 200 x 200
 
 # - # - # - # - # - # - # - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - #
@@ -73,7 +74,7 @@ elif 'hvps' in file_list[0]:
 
 ## functions to make code run smoothly
 def stats_description(bw_crystal, fill_hole_thresh):
-    #take binary image, fill in small holes and returns object containing stats about crystal'
+    #take binary image, fill in small holes and returns object containing stats about crystal
     
     filled_particle = remove_small_holes(bw_crystal.image, area_threshold=fill_hole_thresh) # fill in voids within binary image - better estimation of stats # may need to be altered
     
@@ -242,8 +243,10 @@ for j in range(len(file_list)):
                     plt.show()
                     ###################################################################################################
                     '''
-                
-                    if spec_region and spec_region.major_axis_length * pixel_resolution >= length_threshold:
+
+					## a couple of conditions need to be met in order to do final processing:
+					# spec_region exist, d_max > 
+                    if spec_region and spec_region.major_axis_length * pixel_resolution >= length_threshold and :
                         ## using circularity calculation from Crosier et al. 2011
                         circularity_calc = np.divide((spec_region.perimeter**2),(4*np.pi*spec_region.area))
                         
