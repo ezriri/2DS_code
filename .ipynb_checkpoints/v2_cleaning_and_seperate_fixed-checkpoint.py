@@ -52,7 +52,7 @@ desired_image_size = 200 # (assume we want a square image) 200 x 200
 file_list = '/gws/nopw/j04/dcmex/users/ezriab/raw_h5/2ds/ch_0/Export_base220730153000.h5'
 file_names = 'Export_base220730153000.h5'
 save_path = base_save_path+'processed_images/2ds/ch_0/'
-
+particle_type = 'ch_0'
 '''
 if os.path.exists(path):
     # get string of full path + filenames in specif location
@@ -161,25 +161,29 @@ columns = [
     ]
 
 #start# outer loop for processing each file ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-for j in range(len(file_list)):
+#for j in range(len(file_list)):
+for j in range(1):
 	
 
     ## make folder within correct directory for each file
-    long_date_string = file_names[j][-15:-3]
+    #long_date_string = file_names[j][-15:-3]
+    long_date_string = file_names[-15:-3]
+	
     if not os.path.exists(save_path+long_date_string):
         os.makedirs(save_path+long_date_string)
     flight_save_loc = save_path+long_date_string+'/'
 
     
-    h5_file = h5py.File(file_list[j],'r')
-    print(f'running {file_names[j]}')
+    #h5_file = h5py.File(file_list[j],'r')
+    h5_file = h5py.File(file_list,'r')
+    print(f'running {file_names}')#[j]}')
     particle_df = pd.DataFrame(columns=columns) # empty df for each day of flights
     
     try:
         h5_image = h5_file['ImageData']
         h5_time = h5_file['ImageTimes']
     except KeyError as e:
-        print(f"Dataset missing in file: {file_names[j]}. Error: {e}")
+        print(f"Dataset missing in file: {file_names}")#[j]}. Error: {e}")
         continue
     
     ##### make xarray of useful time data #####
@@ -189,7 +193,9 @@ for j in range(len(file_list)):
     
     ## make useful datetime format (not seconds since midnight)
     # using the file name for reference
-    date_str = file_names[j][-15:-9]
+    #date_str = file_names[j][-15:-9]
+    date_str = file_names[-15:-9]
+	
     starting_date = datetime.strptime(date_str, '%y%m%d')
     time_deltas = [timedelta(seconds=float(sec)) for sec in sec_since]
     utc_time = [starting_date + delta for delta in time_deltas]
