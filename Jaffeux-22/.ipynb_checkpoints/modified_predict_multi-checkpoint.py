@@ -91,7 +91,7 @@ with open(f'{save_loc}cnn_run_output.txt', "w") as file:
             predicted_index = np.argmax(predictions)
             predicted_category = categories[predicted_index]
 
-            data = {'Name': file_names[i][:-4], 'Category': predicted_category}
+            data = {'name': file_names[i][:-4], 'category': predicted_category}
             for j, category in enumerate(categories):
                 data[category] = predictions[j]
             
