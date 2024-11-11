@@ -51,7 +51,8 @@ desired_image_size = 200 # (assume we want a square image) 200 x 200
 ''' practice on 1 file '''
 file_list = '/gws/nopw/j04/dcmex/users/ezriab/raw_h5/2ds/ch_0/Export_base220730153000.h5'
 file_names = 'Export_base220730153000.h5'
-
+save_path = base_save_path+'processed_images/2ds/ch_0/'
+particle_type = 'ch_0'
 '''
 if os.path.exists(path):
     # get string of full path + filenames in specif location
@@ -68,17 +69,17 @@ else:
 if '2ds' in file_list[0]:
     if 'ch_0' in file_list[0]:
         #save_path = base_save_path+'processed_stats/ch_0/'
-		save_path= base_save_path+'processed_images/2ds/ch_0/'
+        save_path = base_save_path+'processed_images/2ds/ch_0/'
         particle_type = 'ch_0'
 
     elif 'ch_1' in file_list[0]:
         #save_path = base_save_path+'processed_stats/ch_1/'
-		save_path= base_save_path+'processed_images/2ds/ch_1/'
+        save_path = base_save_path+'processed_images/2ds/ch_1/'
         particle_type = 'ch_1'
 
 elif 'hvps' in file_list[0]:
     #save_path = base_save_path+'processed_stats/hvps/'
-	save_path= base_save_path+'processed_images/2ds/hvps/'
+    save_path = base_save_path+'processed_images/2ds/hvps/'
     particle_type = 'hvps'
 
 
@@ -160,24 +161,29 @@ columns = [
     ]
 
 #start# outer loop for processing each file ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-for j in range(len(file_list)):
-
-	## make folder within correct directory for each file
-	long_date_string = file_names[j][-15:-3]
-	if not os.path.exists(save_path+long_date_string):
-	    os.makedirs(save_path+long_date_string)
-	flight_save_loc = save_path+long_date_string+'/'
-
+#for j in range(len(file_list)):
+for j in range(1):
 	
-    h5_file = h5py.File(file_list[j],'r')
-    print(f'running {file_names[j]}')
+
+    ## make folder within correct directory for each file
+    #long_date_string = file_names[j][-15:-3]
+    long_date_string = file_names[-15:-3]
+	
+    if not os.path.exists(save_path+long_date_string):
+        os.makedirs(save_path+long_date_string)
+    flight_save_loc = save_path+long_date_string+'/'
+
+    
+    #h5_file = h5py.File(file_list[j],'r')
+    h5_file = h5py.File(file_list,'r')
+    print(f'running {file_names}')#[j]}')
     particle_df = pd.DataFrame(columns=columns) # empty df for each day of flights
     
     try:
         h5_image = h5_file['ImageData']
         h5_time = h5_file['ImageTimes']
     except KeyError as e:
-        print(f"Dataset missing in file: {file_names[j]}. Error: {e}")
+        print(f"Dataset missing in file: {file_names}")#[j]}. Error: {e}")
         continue
     
     ##### make xarray of useful time data #####
@@ -187,7 +193,9 @@ for j in range(len(file_list)):
     
     ## make useful datetime format (not seconds since midnight)
     # using the file name for reference
-    date_str = file_names[j][-15:-9]
+    #date_str = file_names[j][-15:-9]
+    date_str = file_names[-15:-9]
+	
     starting_date = datetime.strptime(date_str, '%y%m%d')
     time_deltas = [timedelta(seconds=float(sec)) for sec in sec_since]
     utc_time = [starting_date + delta for delta in time_deltas]
@@ -210,112 +218,112 @@ for j in range(len(file_list)):
     # Apply the mask to select the corresponding values from pix_sum and utc_time
     selected_pix_sum = pix_sum[:-1][mask]
     selected_utc_time = utc_time[:-1][mask]
-
-	## accompanying txt file with info about processing 
-	with open(f'{flight_save_loc}running_{long_date_string}.txt', "w") as file:
-	    # start # inner loop for processing each slice ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
-	    for i in range(len(selected_pix_sum)-2):
-	    #for i in range(len(selected_pix_sum)-2):
-	    
-	        # pull out selected area + do analysis
-	        one_crystal = h5_file['ImageData'][:,int(selected_pix_sum[i]):int(selected_pix_sum[i+1])] # extract 1 crystal
-	        
-	        binary_image = (one_crystal == 0) ## important, convert regions where 0 = True (our bits of interest), all else false
-	        
-	        labeled_image, num_features = label(binary_image) # identify connected true areas
-	        # labeled_image = array, with each true area given a number to identify them
-	        # num_features = number of unique connected components in image. Have to literally have adjacent pixel, not diagonal (this will make them seperate)
-	        
-	        props = regionprops(labeled_image) # creates quick list of properties describing each feature detected in the image.
-	        ## (features are measured in ~ pixels)
-	        
-	        if props:
-	            #start # inner loop for processing each particle # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
-	            for particle in props:
-	            # go through each particle detected
-	                # quickly get rid of tiny particles
-	                if particle.area >= minimum_area:
-	                    ## more complex stats
-	                    filled_part, spec_region = stats_description(particle,fill_hole_threshold)
-						
-						### quite important, this is remove unwanted particles
-	                    # putting in some conditions to take measurements: d_max needs to be min size, and so does d_min - 4 pixels (remove streak particles)
-	                    if spec_region and spec_region.major_axis_length * pixel_resolution >= length_threshold and :
-							## basic info
-	                        coords = particle.coords # basically gives coords of each point of interest
-	                        x_values = np.unique(coords[:, 1])
-	                        s_idx = int(selected_pix_sum[i] + x_values[0])
-	                        e_idx = int(selected_pix_sum[i] + x_values[-1])
-	        
-	        
-	                         ## truncation calc
-	                        first_diode, last_diode = calc_truncation(one_crystal, filled_part)
-							
-	                        ## using circularity calculation from Crosier et al. 2011
-	                        circularity_calc = np.divide((spec_region.perimeter**2),(4*np.pi*spec_region.area))
-	                        
-	                        # nice way of saving data - lenth + measurements are correct in microns
-	                        one_particle_data = {
-	                                #"image_index": image_index,
-	                                "name": f'{s_idx}_{particle.label}_{particle_type}',
-	                                "date" : date_str,
-	                                #"particle_label": particle.label,
-	                                "slice_s_idx": s_idx,
-	                                "slice_e_idx": e_idx,
-	                                "start_time": str(selected_utc_time[i].values).split('T')[1], # more friendly time
-	                                "end_time": str(selected_utc_time[i+1].values).split('T')[1], # more friendly time
-	                                "d_max": spec_region.major_axis_length * pixel_resolution, ## d_max
-	                                "d_min": spec_region.minor_axis_length * pixel_resolution, ## d_min
-	                                "orientation": spec_region.orientation,
-	                                "centroid": spec_region.centroid,
-	                                "area": (spec_region.area * (pixel_resolution**2)),
-	                                "perimeter": (spec_region.perimeter * pixel_resolution),
-	                                "circularity": circularity_calc,
-	                                "y0": coords[0][0],
-	                                "y1": coords[-1][0],
-	                                "probe": particle_type,
-	                                "first_diode_trunc": first_diode,
-	                                "last_diode_trunc": last_diode
-	                                }
-	                        #print(f'{s_idx} done')
-	                        one_particle_data_df = pd.DataFrame([one_particle_data])
-	                        particle_df = pd.concat([particle_df, one_particle_data_df], ignore_index=True)
-							file.write(f'{s_idx}_{particle.label} stats done \n')
-							
-							############################# re size + save image ##################################################
-	                        filled_part = filled_part.astype(np.float32) ## convert to float 0 and 1s
-	                        filled_part = np.expand_dims(filled_part, axis=-1) ## add extra dimention - this is for adding padding
-	        
-	                        imagex = tf.image.resize_with_crop_or_pad(filled_part, desired_image_size, desired_image_size)
-	
-	                        ## this is checking the image is not blank - written in seperate txt file
-	                        if np.all(imagex == 0):
-	                            file.write(f'{s_idx}_{particle.label} image is blank - 0s \n')
-	                            #print("The image is blank (all pixels are zero).")
-	                        elif np.all(imagex == imagex[0, 0, 0]):
-	                            file.write(f'{s_idx}_{particle.label} image is blank - constant values \n')
-	
-	                        ## save image
-	                        # Remove the extra dimension if needed
-	                        image_np = imagex.numpy().squeeze()
-	                        
-	                        # Save the image using matplotlib
-	                        plt.imsave(f'{flight_save_loc}{s_idx}_{particle.label}.png', image_np, cmap="gray")
-	                        file.write(f'{s_idx}_{particle.label} image saved \n')
-					###################################################################################################
-	            #end # inner loop for processing each particle # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
-	    ## save the stats
-		particle_df.to_csv(f'{flight_save_loc}flight_{long_date_string}.csv', index=False)
-		print(f'flight_{long_date_string} done')
-		'''
-	    if not os.path.exists(f'{flight_save_loc}flight_{long_date_string}.csv'):
-	        particle_df.to_csv(f'{flight_save_loc}flight_{long_date_string}.csv', index=False) 
-	        print(f'flight_{long_date_string}.csv saved sucessfully!')
-	    else:
-	        print("file already exists")
-	    
-	    h5_file.close()    
-		'''
-	    # end # inner loop for processing each slice ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~#
-	    
-	#end# outer loop for processing each file ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    
+    print('started processing')
+    ## accompanying txt file with info about processing 
+    with open(f'{flight_save_loc}running_{long_date_string}.txt', "w") as file:
+        # start # inner loop for processing each slice ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
+        for i in range(len(selected_pix_sum)-2):
+        #for i in range(len(selected_pix_sum)-2):
+        
+            # pull out selected area + do analysis
+            one_crystal = h5_file['ImageData'][:,int(selected_pix_sum[i]):int(selected_pix_sum[i+1])] # extract 1 crystal
+            
+            binary_image = (one_crystal == 0) ## important, convert regions where 0 = True (our bits of interest), all else false
+            
+            labeled_image, num_features = label(binary_image) # identify connected true areas
+            # labeled_image = array, with each true area given a number to identify them
+            # num_features = number of unique connected components in image. Have to literally have adjacent pixel, not diagonal (this will make them seperate)
+            
+            props = regionprops(labeled_image) # creates quick list of properties describing each feature detected in the image.
+            ## (features are measured in ~ pixels)
+            
+            if props:
+                #start # inner loop for processing each particle # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
+                for particle in props:
+                # go through each particle detected
+                    # quickly get rid of tiny particles
+                    if particle.area >= minimum_area:
+                        ## more complex stats
+                        filled_part, spec_region = stats_description(particle,fill_hole_threshold)
+                        
+                        ### quite important, this is remove unwanted particles
+                        # putting in some conditions to take measurements: d_max needs to be min size, and so does d_min - 4 pixels (remove streak particles)
+                        if spec_region and spec_region.major_axis_length * pixel_resolution >= length_threshold and spec_region.minor_axis_length > 4:
+                            ## basic info
+                            coords = particle.coords # basically gives coords of each point of interest
+                            x_values = np.unique(coords[:, 1])
+                            s_idx = int(selected_pix_sum[i] + x_values[0])
+                            e_idx = int(selected_pix_sum[i] + x_values[-1])
+            
+            
+                             ## truncation calc
+                            first_diode, last_diode = calc_truncation(one_crystal, filled_part)
+                            
+                            ## using circularity calculation from Crosier et al. 2011
+                            circularity_calc = np.divide((spec_region.perimeter**2),(4*np.pi*spec_region.area))
+                            
+                            # nice way of saving data - lenth + measurements are correct in microns
+                            one_particle_data = {
+                                    #"image_index": image_index,
+                                    "name": f'{s_idx}_{particle.label}_{particle_type}',
+                                    "date" : date_str,
+                                    #"particle_label": particle.label,
+                                    "slice_s_idx": s_idx,
+                                    "slice_e_idx": e_idx,
+                                    "start_time": str(selected_utc_time[i].values).split('T')[1], # more friendly time
+                                    "end_time": str(selected_utc_time[i+1].values).split('T')[1], # more friendly time
+                                    "d_max": spec_region.major_axis_length * pixel_resolution, ## d_max
+                                    "d_min": spec_region.minor_axis_length * pixel_resolution, ## d_min
+                                    "orientation": spec_region.orientation,
+                                    "centroid": spec_region.centroid,
+                                    "area": (spec_region.area * (pixel_resolution**2)),
+                                    "perimeter": (spec_region.perimeter * pixel_resolution),
+                                    "circularity": circularity_calc,
+                                    "y0": coords[0][0],
+                                    "y1": coords[-1][0],
+                                    "probe": particle_type,
+                                    "first_diode_trunc": first_diode,
+                                    "last_diode_trunc": last_diode
+                                    }
+                            #print(f'{s_idx} done')
+                            one_particle_data_df = pd.DataFrame([one_particle_data])
+                            particle_df = pd.concat([particle_df, one_particle_data_df], ignore_index=True)
+                            file.write(f'{s_idx}_{particle.label} stats done \n')
+                            
+                            ############################# re size + save image ##################################################
+                            filled_part = filled_part.astype(np.float32) ## convert to float 0 and 1s
+                            filled_part = np.expand_dims(filled_part, axis=-1) ## add extra dimention - this is for adding padding
+            
+                            imagex = tf.image.resize_with_crop_or_pad(filled_part, desired_image_size, desired_image_size)
+    
+                            ## this is checking the image is not blank - written in seperate txt file
+                            if np.all(imagex == 0):
+                                file.write(f'{s_idx}_{particle.label} image is blank - 0s \n')
+                                #print("The image is blank (all pixels are zero).")
+                            elif np.all(imagex == imagex[0, 0, 0]):
+                                file.write(f'{s_idx}_{particle.label} image is blank - constant values \n')
+    
+                            ## save image
+                            # Remove the extra dimension if needed
+                            image_np = imagex.numpy().squeeze()
+                            
+                            # Save the image using matplotlib
+                            plt.imsave(f'{flight_save_loc}{s_idx}_{particle.label}.png', image_np, cmap="gray")
+                            file.write(f'{s_idx}_{particle.label} image saved \n')
+                    ###################################################################################################
+                #end # inner loop for processing each particle # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
+        ## save the stats
+        particle_df.to_csv(f'{flight_save_loc}flight_{long_date_string}.csv', index=False)
+        print(f'flight_{long_date_string} done')
+        '''
+        if not os.path.exists(f'{flight_save_loc}flight_{long_date_string}.csv'):
+            particle_df.to_csv(f'{flight_save_loc}flight_{long_date_string}.csv', index=False) 
+            print(f'flight_{long_date_string}.csv saved sucessfully!')
+        else:
+            print("file already exists")
+        
+        h5_file.close()    
+        '''
+        # end # inner loop for processing each slice ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~#
+        
+    #end# outer loop for processing each file ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    

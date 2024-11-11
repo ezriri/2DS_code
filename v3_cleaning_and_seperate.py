@@ -1,4 +1,4 @@
-## V2
+## V3- updates to truncation calculation
 ### python script for extracting stats about specified h5 files
 # 4. h5 -> seperate particles -> cleaning -> png images !
 
@@ -109,32 +109,13 @@ def stats_description(bw_crystal, fill_hole_thresh):
         return filled_particle, None
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## function to calculate truncation of particle
-def calc_truncation(a_slice, particle):
-    # the intial slice is the raw 2ds data - of whole array, and particle is one selected by regionprops (and has to be 1s + 0s)
-    ## assume slices are small + don't contain too many odd bits
-    # first convert to 0 and 1 for calculation of truncation
-    alt_crystal = np.where(a_slice == 255, 0, 1) # i.e. 255 (blank area)=0, and where crystal is (was 0) = 1
-    # so sum up number of particle pixels are on the edge of the slice
-    first_diode = sum(alt_crystal[0,:]) 
-    last_diode = sum(alt_crystal[-1,:])
+def calc_truncation(particle_coords):
+	## so much simpler, looking at list of coordinates making up a particle, then summing ones in 0 and 127 row - i.e. first + last diode
+	lst_first_diode = [coord for coord in particle_coords if coord[0] == 0]
+	lst_last_diode = [coord for coord in particle_coords if coord[0] == 127]
 
-    ## this calculates how many pixels are top / bottom of the particle + then infer number pixels touching
-    top_particle = np.sum(particle[0] == 1)
-    bottom_particle = np.sum(particle[-1] == 1)
-
-    n_top, n_bottom = 0, 0  # Initialize variables, default 0 when conditions are not met
-
-    # Top pixel touching logic
-    if first_diode != 0 and first_diode >= top_particle:
-        n_top = top_particle
-    elif first_diode == 0:
-        n_top = 0
-
-    # Bottom pixel touching logic
-    if last_diode != 0 and last_diode >= bottom_particle:
-        n_bottom = bottom_particle
-    elif last_diode == 0:
-        n_bottom = 0
+	n_top = len(lst_first_diode)
+	n_bottom = len(lst_last_diode)
 
     return n_top, n_bottom # number pixels touching top / bottom respectively
 
@@ -247,7 +228,7 @@ for j in range(1):
                         filled_part, spec_region = stats_description(particle,fill_hole_threshold)
                         
                         ### quite important, this is remove unwanted particles
-                        # putting in some conditions to take measurements: d_max needs to be min size, and so does d_min - 4 pixels (remove streak particles)
+                        # putting in some conditions to take measurements: d_max needs to be min size, and so does d_min - 4 pixels (remove most streak particles)
                         if spec_region and spec_region.major_axis_length * pixel_resolution >= length_threshold and spec_region.minor_axis_length > 4:
                             ## basic info
                             coords = particle.coords # basically gives coords of each point of interest
@@ -257,7 +238,7 @@ for j in range(1):
             
             
                              ## truncation calc
-                            first_diode, last_diode = calc_truncation(one_crystal, filled_part)
+                            first_diode, last_diode = calc_truncation(coords)
                             
                             ## using circularity calculation from Crosier et al. 2011
                             circularity_calc = np.divide((spec_region.perimeter**2),(4*np.pi*spec_region.area))
