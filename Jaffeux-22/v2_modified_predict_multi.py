@@ -1,3 +1,4 @@
+## i have no fucking clue what keeps going wrong, but this code should work
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras.preprocessing import image
@@ -16,7 +17,7 @@ file_list = glob(file_path + '*.png')
 file_names = [os.path.basename(file_path) for file_path in file_list]
 
 save_loc = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v3_220730153000/'
-save_name = 'habit_predictions.csv'
+save_name = 'v2_habit_predictions.csv'
 
 categories = ['CA', 'Co', 'CC', 'CBC', 'CG', 'HPC', 'Dif', 'FA', 'WD']
 columns_names = ['Name', 'Category'] + categories
@@ -66,35 +67,34 @@ def load_image_with_timeout(file_path, target_size=(200, 200), color_mode='grays
 results = []
 
 with open(f'{save_loc}cnn_run_output.txt', "w") as file:
-    total_start_time = time.time()  # Track overall start time
+    total_start_time = time.time()
     for i in range(len(file_names)):
-        start_time = time.time()  # Track start time for each image
+        start_time = time.time()
         file.write(f'{file_names[i]} start\n')
         print(f'Processing {file_names[i]}')
         try:
-            # Load image with timeout handling
             img = load_image_with_timeout(file_path + file_names[i])
             if img is None:
                 file.write(f'{file_names[i]} skipped: load issue\n')
                 continue
 
             img_array = image.img_to_array(img)
-            img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
+            img_array = np.expand_dims(img_array, axis=0)
 
-            # Check for any unexpected shapes or sizes
-            if img_array.shape != (1, 200, 200, 1):  # Expected shape for (batch, height, width, channels)
+            if img_array.shape != (1, 200, 200, 1):
                 file.write(f'{file_names[i]} skipped: unexpected shape {img_array.shape}\n')
                 continue
 
-            # Predict and log results
             predictions = model.predict(img_array, verbose=0)[0]
-            predicted_index = np.argmax(predictions)
-            predicted_category = categories[predicted_index]
+            print(f"Predictions for {file_names[i]}: {predictions}")  # Debugging print
 
-            data = {'name': file_names[i][:-4], 'category': predicted_category}
+            predicted_index = np.argmax(predictions)
+            predicted_category = categories[predicted_index] if predicted_index < len(categories) else "Unknown"
+
+            data = {'Name': file_names[i][:-4], 'Category': predicted_category}
             for j, category in enumerate(categories):
                 data[category] = predictions[j]
-            
+
             results.append(data)
             file.write(f'{file_names[i]} completed successfully\n')
 
@@ -102,12 +102,10 @@ with open(f'{save_loc}cnn_run_output.txt', "w") as file:
             print(f"Error processing {file_names[i]}: {e}")
             file.write(f'Error processing {file_names[i]}: {e}\n')
         
-        # Log the time taken for each image
         end_time = time.time()
         elapsed_time = end_time - start_time
         file.write(f'{file_names[i]} processing time: {elapsed_time:.2f} seconds\n')
 
-    # Log the total processing time
     total_end_time = time.time()
     total_elapsed_time = total_end_time - total_start_time
     file.write(f'Total processing time: {total_elapsed_time:.2f} seconds\n')

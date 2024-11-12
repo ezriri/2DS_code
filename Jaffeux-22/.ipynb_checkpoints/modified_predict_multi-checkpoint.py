@@ -10,12 +10,12 @@ from glob import glob
 import time  # For tracking time
 
 ### Path setup
-dcmex_2ds = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/220730153000/'
+dcmex_2ds = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v3_220730153000/'
 file_path = dcmex_2ds
 file_list = glob(file_path + '*.png')
 file_names = [os.path.basename(file_path) for file_path in file_list]
 
-save_loc = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/220730153000/'
+save_loc = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v3_220730153000/'
 save_name = 'habit_predictions.csv'
 
 categories = ['CA', 'Co', 'CC', 'CBC', 'CG', 'HPC', 'Dif', 'FA', 'WD']

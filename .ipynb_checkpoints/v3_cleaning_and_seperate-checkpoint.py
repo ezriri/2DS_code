@@ -1,4 +1,5 @@
-## V3- updates to truncation calculation
+## V3- updates to truncation calculation + removed some final values in the table
+# + aspect ratio + new naming scheme
 ### python script for extracting stats about specified h5 files
 # 4. h5 -> seperate particles -> cleaning -> png images !
 
@@ -8,11 +9,8 @@ import matplotlib as mpl
 import numpy as np
 from glob import glob
 import seaborn as sns
-#import xesmf as xe
 import pandas as pd
-#import def_homebrew as hb ## homemade functions xox
 from scipy.special import gamma
-#import netCDF4 as nc
 from datetime import datetime, timedelta
 
 import h5py ####
@@ -44,7 +42,7 @@ fill_hole_threshold = 5 # max number pixels contained within particle that is fi
 minimum_area = 15 # very quick metric to stop the processing of particles with area < 15 pixels
 
 length_threshold = 300 #300 # mu - need this minimum length of max dimension to extract the particle
-pixel_resolution = 10 # mu
+pixel_resolution = 10 # mu for 2ds // 150 for hvps
 desired_image_size = 200 # (assume we want a square image) 200 x 200
 
 # - # - # - # - # - # - # - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - #
@@ -52,7 +50,7 @@ desired_image_size = 200 # (assume we want a square image) 200 x 200
 file_list = '/gws/nopw/j04/dcmex/users/ezriab/raw_h5/2ds/ch_0/Export_base220730153000.h5'
 file_names = 'Export_base220730153000.h5'
 save_path = base_save_path+'processed_images/2ds/ch_0/'
-particle_type = 'ch_0'
+particle_type = 'ch0'
 '''
 if os.path.exists(path):
     # get string of full path + filenames in specif location
@@ -63,25 +61,23 @@ if os.path.exists(path):
 else:
     print("NOT REAL OH NO")
 
-'''
-
 ## adding automation - makes sure to change when processing images !!!!!!!!!!!!!
 if '2ds' in file_list[0]:
     if 'ch_0' in file_list[0]:
         #save_path = base_save_path+'processed_stats/ch_0/'
         save_path = base_save_path+'processed_images/2ds/ch_0/'
-        particle_type = 'ch_0'
+        particle_type = 'ch0'
 
     elif 'ch_1' in file_list[0]:
         #save_path = base_save_path+'processed_stats/ch_1/'
         save_path = base_save_path+'processed_images/2ds/ch_1/'
-        particle_type = 'ch_1'
+        particle_type = 'ch1'
 
 elif 'hvps' in file_list[0]:
     #save_path = base_save_path+'processed_stats/hvps/'
     save_path = base_save_path+'processed_images/2ds/hvps/'
     particle_type = 'hvps'
-
+'''
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
@@ -110,12 +106,12 @@ def stats_description(bw_crystal, fill_hole_thresh):
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## function to calculate truncation of particle
 def calc_truncation(particle_coords):
-	## so much simpler, looking at list of coordinates making up a particle, then summing ones in 0 and 127 row - i.e. first + last diode
-	lst_first_diode = [coord for coord in particle_coords if coord[0] == 0]
-	lst_last_diode = [coord for coord in particle_coords if coord[0] == 127]
+    ## so much simpler, looking at list of coordinates making up a particle, then summing ones in 0 and 127 row - i.e. first + last diode
+    lst_first_diode = [coord for coord in particle_coords if coord[0] == 0]
+    lst_last_diode = [coord for coord in particle_coords if coord[0] == 127]
 
-	n_top = len(lst_first_diode)
-	n_bottom = len(lst_last_diode)
+    n_top = len(lst_first_diode)
+    n_bottom = len(lst_last_diode)
 
     return n_top, n_bottom # number pixels touching top / bottom respectively
 
@@ -129,30 +125,38 @@ columns = [
     "end_time",
     "d_max",
     "d_min",
-    "orientation",
-    "centroid",
+    #"orientation",
+    #"centroid",
     "area",
     "perimeter",
     "circularity",
-    "y0",
-    "y1",
+    #"y0",
+    #"y1",
     "probe",
     "first_diode_trunc",
-    "last_diode_trunc"
+    "last_diode_trunc",
+    "aspect_ratio"
     ]
 
 #start# outer loop for processing each file ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #for j in range(len(file_list)):
-for j in range(1):
-	
-
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+for j in range(1): 
+    
     ## make folder within correct directory for each file
     #long_date_string = file_names[j][-15:-3]
     long_date_string = file_names[-15:-3]
-	
+    '''
     if not os.path.exists(save_path+long_date_string):
         os.makedirs(save_path+long_date_string)
     flight_save_loc = save_path+long_date_string+'/'
+    '''
+
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if not os.path.exists(save_path+'v3_'+long_date_string):
+        os.makedirs(save_path+'v3_'+long_date_string)
+    flight_save_loc = save_path+'v3_'+long_date_string+'/'
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     
     #h5_file = h5py.File(file_list[j],'r')
@@ -174,9 +178,11 @@ for j in range(1):
     
     ## make useful datetime format (not seconds since midnight)
     # using the file name for reference
-    #date_str = file_names[j][-15:-9]
-    date_str = file_names[-15:-9]
-	
+    #date_str = file_names[j][-15:-9] 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    date_str = file_names[-15:-9] 
+    date_day = date_str[-2:]
+    
     starting_date = datetime.strptime(date_str, '%y%m%d')
     time_deltas = [timedelta(seconds=float(sec)) for sec in sec_since]
     utc_time = [starting_date + delta for delta in time_deltas]
@@ -226,75 +232,78 @@ for j in range(1):
                     if particle.area >= minimum_area:
                         ## more complex stats
                         filled_part, spec_region = stats_description(particle,fill_hole_threshold)
-                        
+
                         ### quite important, this is remove unwanted particles
                         # putting in some conditions to take measurements: d_max needs to be min size, and so does d_min - 4 pixels (remove most streak particles)
-                        if spec_region and spec_region.major_axis_length * pixel_resolution >= length_threshold and spec_region.minor_axis_length > 4:
-                            ## basic info
-                            coords = particle.coords # basically gives coords of each point of interest
-                            x_values = np.unique(coords[:, 1])
-                            s_idx = int(selected_pix_sum[i] + x_values[0])
-                            e_idx = int(selected_pix_sum[i] + x_values[-1])
-            
-            
-                             ## truncation calc
-                            first_diode, last_diode = calc_truncation(coords)
+                        if spec_region:
+                            aspect_ratio_value = spec_region.major_axis_length / spec_region.minor_axis_length
                             
-                            ## using circularity calculation from Crosier et al. 2011
-                            circularity_calc = np.divide((spec_region.perimeter**2),(4*np.pi*spec_region.area))
-                            
-                            # nice way of saving data - lenth + measurements are correct in microns
-                            one_particle_data = {
-                                    #"image_index": image_index,
-                                    "name": f'{s_idx}_{particle.label}_{particle_type}',
-                                    "date" : date_str,
-                                    #"particle_label": particle.label,
-                                    "slice_s_idx": s_idx,
-                                    "slice_e_idx": e_idx,
-                                    "start_time": str(selected_utc_time[i].values).split('T')[1], # more friendly time
-                                    "end_time": str(selected_utc_time[i+1].values).split('T')[1], # more friendly time
-                                    "d_max": spec_region.major_axis_length * pixel_resolution, ## d_max
-                                    "d_min": spec_region.minor_axis_length * pixel_resolution, ## d_min
-                                    "orientation": spec_region.orientation,
-                                    "centroid": spec_region.centroid,
-                                    "area": (spec_region.area * (pixel_resolution**2)),
-                                    "perimeter": (spec_region.perimeter * pixel_resolution),
-                                    "circularity": circularity_calc,
-                                    "y0": coords[0][0],
-                                    "y1": coords[-1][0],
-                                    "probe": particle_type,
-                                    "first_diode_trunc": first_diode,
-                                    "last_diode_trunc": last_diode
-                                    }
-                            #print(f'{s_idx} done')
-                            one_particle_data_df = pd.DataFrame([one_particle_data])
-                            particle_df = pd.concat([particle_df, one_particle_data_df], ignore_index=True)
-                            file.write(f'{s_idx}_{particle.label} stats done \n')
-                            
-                            ############################# re size + save image ##################################################
-                            filled_part = filled_part.astype(np.float32) ## convert to float 0 and 1s
-                            filled_part = np.expand_dims(filled_part, axis=-1) ## add extra dimention - this is for adding padding
-            
-                            imagex = tf.image.resize_with_crop_or_pad(filled_part, desired_image_size, desired_image_size)
-    
-                            ## this is checking the image is not blank - written in seperate txt file
-                            if np.all(imagex == 0):
-                                file.write(f'{s_idx}_{particle.label} image is blank - 0s \n')
-                                #print("The image is blank (all pixels are zero).")
-                            elif np.all(imagex == imagex[0, 0, 0]):
-                                file.write(f'{s_idx}_{particle.label} image is blank - constant values \n')
-    
-                            ## save image
-                            # Remove the extra dimension if needed
-                            image_np = imagex.numpy().squeeze()
-                            
-                            # Save the image using matplotlib
-                            plt.imsave(f'{flight_save_loc}{s_idx}_{particle.label}.png', image_np, cmap="gray")
-                            file.write(f'{s_idx}_{particle.label} image saved \n')
+                            if spec_region.major_axis_length * pixel_resolution >= length_threshold and spec_region.minor_axis_length > 4 and aspect_ratio_value <10:
+                                ## basic info
+                                coords = particle.coords # basically gives coords of each point of interest
+                                x_values = np.unique(coords[:, 1])
+                                s_idx = int(selected_pix_sum[i] + x_values[0])
+                                e_idx = int(selected_pix_sum[i] + x_values[-1])
+                
+                
+                                 ## truncation calc
+                                first_diode, last_diode = calc_truncation(coords)
+                                
+                                ## using circularity calculation from Crosier et al. 2011
+                                circularity_calc = np.divide((spec_region.perimeter**2),(4*np.pi*spec_region.area))
+                                particle_name = f'{s_idx}_{date_day}{particle_type}'
+                                # nice way of saving data - lenth + measurements are correct in microns
+                                one_particle_data = {
+                                        #"image_index": image_index,
+                                        "name": particle_name,
+                                        "date" : date_str,
+                                        "slice_s_idx": s_idx,
+                                        "slice_e_idx": e_idx,
+                                        "start_time": str(selected_utc_time[i].values).split('T')[1], # more friendly time
+                                        "end_time": str(selected_utc_time[i+1].values).split('T')[1], # more friendly time
+                                        "d_max": spec_region.major_axis_length * pixel_resolution, ## d_max
+                                        "d_min": spec_region.minor_axis_length * pixel_resolution, ## d_min
+                                        #"orientation": spec_region.orientation,
+                                        #"centroid": spec_region.centroid,
+                                        "area": (spec_region.area * (pixel_resolution**2)),
+                                        "perimeter": (spec_region.perimeter * pixel_resolution),
+                                        "circularity": circularity_calc,
+                                        #"y0": coords[0][0],
+                                        #"y1": coords[-1][0],
+                                        "probe": particle_type,
+                                        "first_diode_trunc": first_diode,
+                                        "last_diode_trunc": last_diode,
+                                        "aspect_ratio": aspect_ratio_value
+                                        }
+                                #print(f'{s_idx} done')
+                                one_particle_data_df = pd.DataFrame([one_particle_data])
+                                particle_df = pd.concat([particle_df, one_particle_data_df], ignore_index=True)
+                                file.write(f'{particle_name} stats done \n')
+                                
+                                ############################# re size + save image ##################################################
+                                filled_part = filled_part.astype(np.float32) ## convert to float 0 and 1s
+                                filled_part = np.expand_dims(filled_part, axis=-1) ## add extra dimention - this is for adding padding
+                
+                                imagex = tf.image.resize_with_crop_or_pad(filled_part, desired_image_size, desired_image_size)
+        
+                                ## this is checking the image is not blank - written in seperate txt file
+                                if np.all(imagex == 0):
+                                    file.write(f'{particle_name} image is blank - 0s \n')
+                                    #print("The image is blank (all pixels are zero).")
+                                elif np.all(imagex == imagex[0, 0, 0]):
+                                    file.write(f'{particle_name} image is blank - constant values \n')
+        
+                                ## save image
+                                # Remove the extra dimension if needed
+                                image_np = imagex.numpy().squeeze()
+                                
+                                # Save the image using matplotlib
+                                plt.imsave(f'{flight_save_loc}{particle_name}.png', image_np, cmap="gray")
+                                file.write(f'{particle_name} image saved \n')
                     ###################################################################################################
                 #end # inner loop for processing each particle # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
         ## save the stats
-        particle_df.to_csv(f'{flight_save_loc}flight_{long_date_string}.csv', index=False)
+        particle_df.to_csv(f'{flight_save_loc}v3_flight_{long_date_string}.csv', index=False)
         print(f'flight_{long_date_string} done')
         '''
         if not os.path.exists(f'{flight_save_loc}flight_{long_date_string}.csv'):
