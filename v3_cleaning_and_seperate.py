@@ -40,11 +40,7 @@ path = path_h5_ds_0 #################### edit depending on 2ds channel / probe #
 fill_hole_threshold = 5 # max number pixels contained within particle that is filled in
 
 minimum_area = 15 # very quick metric to stop the processing of particles with area < 15 pixels
-
-length_threshold = 300 #300 # mu - need this minimum length of max dimension to extract the particle
-pixel_resolution = 10 # mu for 2ds // 150 for hvps
-desired_image_size = 200 # (assume we want a square image) 200 x 200
-
+desired_image_size = 200 # (assume we want a square image) 200 x 200 for 
 # - # - # - # - # - # - # - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - #
 ''' practice on 1 file '''
 file_list = '/gws/nopw/j04/dcmex/users/ezriab/raw_h5/2ds/ch_0/Export_base220730153000.h5'
@@ -63,6 +59,9 @@ else:
 
 ## adding automation - makes sure to change when processing images !!!!!!!!!!!!!
 if '2ds' in file_list[0]:
+	length_threshold = 300 # mu - need this minimum length of max dimension to extract the particle
+	pixel_resolution = 10 # mu for 2ds // 150 for hvps
+	
     if 'ch_0' in file_list[0]:
         #save_path = base_save_path+'processed_stats/ch_0/'
         save_path = base_save_path+'processed_images/2ds/ch_0/'
@@ -74,6 +73,9 @@ if '2ds' in file_list[0]:
         particle_type = 'ch1'
 
 elif 'hvps' in file_list[0]:
+	length_threshold = 300 # mu - need this minimum length of max dimension to extract the particle
+	pixel_resolution = 150 # mu for 2ds // 150 for hvps
+
     #save_path = base_save_path+'processed_stats/hvps/'
     save_path = base_save_path+'processed_images/2ds/hvps/'
     particle_type = 'hvps'
