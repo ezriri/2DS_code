@@ -238,7 +238,7 @@ for j in range(1):
                         ### quite important, this is remove unwanted particles
                         # putting in some conditions to take measurements: d_max needs to be min size, and so does d_min - 4 pixels (remove most streak particles)
                         if spec_region:
-                            aspect_ratio_value = spec_region.major_axis_length / spec_region.minor_axis_length
+                            aspect_ratio_value = spec_region.major_axis_length / spec_region.minor_axis_length ## this is using the ellipse normalised to particle area (so is rough aspect ratio)
                             
                             if spec_region.major_axis_length * pixel_resolution >= length_threshold and spec_region.minor_axis_length > 4 and aspect_ratio_value <10:
                                 ## basic info
