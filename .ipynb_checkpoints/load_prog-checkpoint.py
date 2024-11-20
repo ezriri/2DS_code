@@ -21,5 +21,10 @@ from scipy.ndimage import binary_fill_holes
 from skimage import measure
 import tensorflow as tf
 
+# Check if the function exists
+if hasattr(tf.image, 'resize_with_crop_or_pad'):
+    print("The function 'tf.image.resize_with_crop_or_pad' is available.")
+else:
+    print("The function 'tf.image.resize_with_crop_or_pad' is not available.")
 
 print('loaded all!')
