@@ -242,7 +242,7 @@ for j in range(1):
                             
                             if spec_region.major_axis_length * pixel_resolution >= length_threshold and spec_region.minor_axis_length > 4 and aspect_ratio_value <10:
                                 ## basic info
-                                coords = particle.coords # basically gives coords of each point of interest
+                                coords = particle.coords # basically gives coords of each point of interest [row,column]
                                 x_values = np.unique(coords[:, 1])
                                 s_idx = int(selected_pix_sum[i] + x_values[0])
                                 e_idx = int(selected_pix_sum[i] + x_values[-1])

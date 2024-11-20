@@ -20,6 +20,7 @@ import os
 from scipy.ndimage import convolve, label
 from skimage.measure import regionprops, find_contours
 from scipy.spatial import ConvexHull, distance_matrix
+from scipy.spatial.distance import pdist
 from skimage.morphology import remove_small_holes ## remove holes <3
 from scipy.ndimage import binary_fill_holes
 from skimage import measure
@@ -47,6 +48,8 @@ file_list = '/gws/nopw/j04/dcmex/users/ezriab/raw_h5/2ds/ch_0/Export_base2207301
 file_names = 'Export_base220730153000.h5'
 save_path = base_save_path+'processed_images/2ds/ch_0/'
 particle_type = 'ch0'
+length_threshold = 100
+pixel_resolution = 10 # mu for 2DS
 '''
 if os.path.exists(path):
     # get string of full path + filenames in specif location
@@ -57,11 +60,11 @@ if os.path.exists(path):
 else:
     print("NOT REAL OH NO")
 
-## adding automation - makes sure to change when processing images !!!!!!!!!!!!!
+## adding automation - !!!!!!!!!!!!!
 if '2ds' in file_list[0]:
-	length_threshold = 300 # mu - need this minimum length of max dimension to extract the particle
-	pixel_resolution = 10 # mu for 2ds // 150 for hvps
-	
+    length_threshold = 100 # mu - need this minimum length of max dimension to extract the particle
+    pixel_resolution = 10 # mu for 2DS
+    
     if 'ch_0' in file_list[0]:
         #save_path = base_save_path+'processed_stats/ch_0/'
         save_path = base_save_path+'processed_images/2ds/ch_0/'
@@ -73,8 +76,8 @@ if '2ds' in file_list[0]:
         particle_type = 'ch1'
 
 elif 'hvps' in file_list[0]:
-	length_threshold = 300 # mu - need this minimum length of max dimension to extract the particle
-	pixel_resolution = 150 # mu for 2ds // 150 for hvps
+    length_threshold = 150 # mu - need this minimum length of max dimension to extract the particle
+    pixel_resolution = 150 # mu for HVPS
 
     #save_path = base_save_path+'processed_stats/hvps/'
     save_path = base_save_path+'processed_images/2ds/hvps/'
@@ -118,8 +121,6 @@ def calc_truncation(particle_coords):
     return n_top, n_bottom # number pixels touching top / bottom respectively
 
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-## calculating Euclidean diameter
-def euclidean_d_func():
     
 
 ###  set up dataframe, used to extract from raw h5 file + has stats about the particle
@@ -128,19 +129,19 @@ columns = [
     "date",
     "slice_s_idx",
     "slice_e_idx",
-    "start_time",
-    "end_time",
-    "ellipse_d_max",
-    #"ellipse_d_min",
-	"Euclidean_d_max",
-	"Feret_d_max",
-    "area",
-    "perimeter",
+    "start_time", #hh:mm:ss 
+    "end_time", #hh:mm:ss 
+    "ellipse_d_max", # um
+    #"ellipse_d_min", # um
+    "Euclidean_d_max", # um
+    "Feret_d_max", # um
+    "area", # um2
+    "perimeter", # um
     "circularity",
     "probe",
     "first_diode_trunc",
     "last_diode_trunc",
-	"image_trunc",
+    "image_trunc",
     "aspect_ratio"
     ]
 
@@ -159,9 +160,9 @@ for j in range(1):
     '''
 
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    if not os.path.exists(save_path+'v3_'+long_date_string):
-        os.makedirs(save_path+'v3_'+long_date_string)
-    flight_save_loc = save_path+'v3_'+long_date_string+'/'
+    if not os.path.exists(save_path+'v4_'+long_date_string):
+        os.makedirs(save_path+'v4_'+long_date_string)
+    flight_save_loc = save_path+'v4_'+long_date_string+'/'
 ## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     
@@ -251,23 +252,23 @@ for j in range(1):
                                 s_idx = int(selected_pix_sum[i] + x_values[0])
                                 e_idx = int(selected_pix_sum[i] + x_values[-1])
                 
-				                
+                                
                                 ## truncation calc
-								# cnn - in final pic size, particle may be truncated if very long, this tells us how many pixels may be cut off 
-								image_trunc = x_values[-1] - desired_image_size 
-								if image_trunc < 0:
-								    image_trunc = 0
-								# normal trunc calculation - on actual probe
+                                # cnn - in final pic size, particle may be truncated if very long, this tells us how many pixels may be cut off 
+                                image_trunc = x_values[-1] - desired_image_size 
+                                if image_trunc < 0:
+                                    image_trunc = 0
+                                # normal trunc calculation - on actual probe
                                 first_diode, last_diode = calc_truncation(coords)
                                 
                                 ## using circularity calculation from Crosier et al. 2011
                                 circularity_calc = np.divide((spec_region.perimeter**2),(4*np.pi*spec_region.area))
                                 particle_name = f'{s_idx}_{date_day}{particle_type}'
-								
-								##
-								distances = pdist(coords)
-			                    euclidean_dim = np.max(distances)
-								
+                                
+                                ## euclidean diameter calculation
+                                distances = pdist(coords)
+                                euclidean_dim = np.max(distances)
+                                
                                 # nice way of saving data - lenth + measurements are correct in microns
                                 one_particle_data = {
                                         #"image_index": image_index,
@@ -279,15 +280,15 @@ for j in range(1):
                                         "end_time": str(selected_utc_time[i+1].values).split('T')[1], # more friendly time
                                         "ellipse_d_max": spec_region.major_axis_length * pixel_resolution, ## d_max (equivalent ellipse)
                                         #"ellipse_d_min": spec_region.minor_axis_length * pixel_resolution, ## d_min (equivalent ellipse)
-										"Euclidean_d_max": euclidean_dim * pixel_resolution,
-										"Feret_d_max":spec_region.feret_diameter_max * pixel_resolution,
+                                        "Euclidean_d_max": euclidean_dim * pixel_resolution,
+                                        "Feret_d_max":spec_region.feret_diameter_max * pixel_resolution,
                                         "area": (spec_region.area * (pixel_resolution**2)),
                                         "perimeter": (spec_region.perimeter * pixel_resolution),
                                         "circularity": circularity_calc,
                                         "probe": particle_type,
                                         "first_diode_trunc": first_diode,
                                         "last_diode_trunc": last_diode,
-										"image_trunc": image_trunc,
+                                        "image_trunc": image_trunc,
                                         "aspect_ratio": aspect_ratio_value  
                                         }
                                 #print(f'{s_idx} done')
@@ -318,7 +319,7 @@ for j in range(1):
                     ###################################################################################################
                 #end # inner loop for processing each particle # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
         ## save the stats
-        particle_df.to_csv(f'{flight_save_loc}v3_flight_{long_date_string}.csv', index=False)
+        particle_df.to_csv(f'{flight_save_loc}v4_flight_{long_date_string}.csv', index=False)
         print(f'flight_{long_date_string} done')
         '''
         if not os.path.exists(f'{flight_save_loc}flight_{long_date_string}.csv'):
