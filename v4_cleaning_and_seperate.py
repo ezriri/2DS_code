@@ -1,5 +1,6 @@
 ## V4- updates to truncation calculation + removed some final values in the table
 # multiple diameters + final CNN trunaction calculation + understanding of equivalent ellipse values
+# threshold diameter updated to Euclidean Diameter
 ### python script for extracting stats about specified h5 files
 # 4. h5 -> seperate particles -> cleaning -> png images !
 
@@ -245,14 +246,18 @@ for j in range(1):
                         if spec_region:
                             aspect_ratio_value = spec_region.major_axis_length / spec_region.minor_axis_length ## this is very rough, based on equivalent ellipse of the particle (really not accurate) - more just to remove weird looking ones
                             
-                            if spec_region.major_axis_length * pixel_resolution >= length_threshold and spec_region.minor_axis_length > 4 and aspect_ratio_value <10:
+                            ## euclidean diameter calculation
+                            coords = particle.coords # basically gives coords of each point of interest [row,column]
+                            distances = pdist(coords)
+                            euclidean_dim = np.max(distances)
+                            
+                            if euclidean_dim * pixel_resolution >= length_threshold and spec_region.minor_axis_length > 4 and aspect_ratio_value <10:
+                                
                                 ## basic info
-                                coords = particle.coords # basically gives coords of each point of interest [row,column]
                                 x_values = np.unique(coords[:, 1])
                                 s_idx = int(selected_pix_sum[i] + x_values[0])
                                 e_idx = int(selected_pix_sum[i] + x_values[-1])
                 
-                                
                                 ## truncation calc
                                 # cnn - in final pic size, particle may be truncated if very long, this tells us how many pixels may be cut off 
                                 image_trunc = x_values[-1] - desired_image_size 
@@ -264,10 +269,6 @@ for j in range(1):
                                 ## using circularity calculation from Crosier et al. 2011
                                 circularity_calc = np.divide((spec_region.perimeter**2),(4*np.pi*spec_region.area))
                                 particle_name = f'{s_idx}_{date_day}{particle_type}'
-                                
-                                ## euclidean diameter calculation
-                                distances = pdist(coords)
-                                euclidean_dim = np.max(distances)
                                 
                                 # nice way of saving data - lenth + measurements are correct in microns
                                 one_particle_data = {
@@ -291,7 +292,7 @@ for j in range(1):
                                         "image_trunc": image_trunc,
                                         "aspect_ratio": aspect_ratio_value  
                                         }
-                                #print(f'{s_idx} done')
+                                print(f'{particle_name} done')
                                 one_particle_data_df = pd.DataFrame([one_particle_data])
                                 particle_df = pd.concat([particle_df, one_particle_data_df], ignore_index=True)
                                 file.write(f'{particle_name} stats done \n')

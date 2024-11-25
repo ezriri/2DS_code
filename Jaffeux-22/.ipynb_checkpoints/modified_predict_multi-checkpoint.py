@@ -8,14 +8,15 @@ import concurrent.futures
 import os
 from glob import glob
 import time  # For tracking time
+## i have had to downgrade tf / keras for the model to work: pip install tensorflow==2.12 keras==2.12
 
 ### Path setup
-dcmex_2ds = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v3_220730153000/'
+dcmex_2ds = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v4_2_220730153000/'
 file_path = dcmex_2ds
 file_list = glob(file_path + '*.png')
 file_names = [os.path.basename(file_path) for file_path in file_list]
 
-save_loc = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v3_220730153000/'
+save_loc = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v4_2_220730153000/'
 save_name = 'habit_predictions.csv'
 
 categories = ['CA', 'Co', 'CC', 'CBC', 'CG', 'HPC', 'Dif', 'FA', 'WD']

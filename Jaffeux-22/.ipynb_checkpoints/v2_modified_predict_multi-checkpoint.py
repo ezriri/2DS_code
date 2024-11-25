@@ -1,9 +1,11 @@
-## i have no fucking clue what keeps going wrong, but this code should work
 import tensorflow as tf
 import numpy as np
 from tensorflow.keras.preprocessing import image
 from tensorflow.keras.models import load_model
 from tensorflow.keras.utils import register_keras_serializable
+from keras.layers import TFSMLayer
+from keras.layers import Input
+from keras import Model
 import pandas as pd
 import concurrent.futures
 import os
@@ -11,13 +13,13 @@ from glob import glob
 import time  # For tracking time
 
 ### Path setup
-dcmex_2ds = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v3_220730153000/'
+dcmex_2ds = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v4_2_220730153000/'
 file_path = dcmex_2ds
 file_list = glob(file_path + '*.png')
 file_names = [os.path.basename(file_path) for file_path in file_list]
 
-save_loc = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v3_220730153000/'
-save_name = 'v2_habit_predictions.csv'
+save_loc = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/2ds/ch_0/v4_2_220730153000/'
+save_name = 'habit_predictions.csv'
 
 categories = ['CA', 'Co', 'CC', 'CBC', 'CG', 'HPC', 'Dif', 'FA', 'WD']
 columns_names = ['Name', 'Category'] + categories
@@ -48,7 +50,24 @@ class RandomFlip(tf.keras.layers.Layer):
         return config
 
 custom_objects = {'RandomFlip': RandomFlip}
-model = load_model(model_path, custom_objects=custom_objects)
+
+#model = load_model(model_path, custom_objects=custom_objects)
+#model = load_model(model_path, compile=False)  # Skip layers like `RandomFlip` if they interfere.
+#model = TFSMLayer("/gws/nopw/j04/dcmex/users/ezriab/cp-of-Jaffeux-22/novmodel.h5py", call_endpoint='serving_default')
+
+# Define the input shape based on the expected input format
+input_shape = (200, 200, 1)
+
+# Create input tensor
+inputs = Input(shape=input_shape)
+
+# Wrap TFSMLayer into a Model
+tfsm_layer = TFSMLayer(
+    "/gws/nopw/j04/dcmex/users/ezriab/cp-of-Jaffeux-22/novmodel.h5py",
+    call_endpoint='serving_default'
+)
+outputs = tfsm_layer(inputs)
+model = Model(inputs, outputs)
 
 ### Helper functions
 def load_image_with_timeout(file_path, target_size=(200, 200), color_mode='grayscale', timeout=15):
@@ -60,52 +79,55 @@ def load_image_with_timeout(file_path, target_size=(200, 200), color_mode='grays
     except concurrent.futures.TimeoutError:
         print(f"Timeout loading {file_path}. Skipping.")
     except Exception as e:
-        print(f"Error loading {file_path}: {e}")
+        print(f"Error loading {file_path}: {repr(e)}")
     return None
 
 ### Processing loop
 results = []
 
 with open(f'{save_loc}cnn_run_output.txt', "w") as file:
-    total_start_time = time.time()
+    total_start_time = time.time()  # Track overall start time
     for i in range(len(file_names)):
-        start_time = time.time()
+        start_time = time.time()  # Track start time for each image
         file.write(f'{file_names[i]} start\n')
         print(f'Processing {file_names[i]}')
         try:
+            # Load image with timeout handling
             img = load_image_with_timeout(file_path + file_names[i])
             if img is None:
                 file.write(f'{file_names[i]} skipped: load issue\n')
                 continue
 
             img_array = image.img_to_array(img)
-            img_array = np.expand_dims(img_array, axis=0)
+            img_array = np.expand_dims(img_array, axis=0)  # Add batch dimension
 
-            if img_array.shape != (1, 200, 200, 1):
+            # Check for any unexpected shapes or sizes
+            if img_array.shape != (1, 200, 200, 1):  # Expected shape for (batch, height, width, channels)
                 file.write(f'{file_names[i]} skipped: unexpected shape {img_array.shape}\n')
                 continue
 
+            # Predict and log results
             predictions = model.predict(img_array, verbose=0)[0]
-            print(f"Predictions for {file_names[i]}: {predictions}")  # Debugging print
-
             predicted_index = np.argmax(predictions)
-            predicted_category = categories[predicted_index] if predicted_index < len(categories) else "Unknown"
+            predicted_category = categories[predicted_index]
 
-            data = {'Name': file_names[i][:-4], 'Category': predicted_category}
+            data = {'name': file_names[i][:-4], 'category': predicted_category}
             for j, category in enumerate(categories):
                 data[category] = predictions[j]
-
+            
             results.append(data)
             file.write(f'{file_names[i]} completed successfully\n')
 
         except Exception as e:
-            print(f"Error processing {file_names[i]}: {e}")
-            file.write(f'Error processing {file_names[i]}: {e}\n')
+            print(f"Error processing {file_names[i]}: {repr(e)}")
+            file.write(f'Error processing {file_names[i]}: {repr(e)}\n')
         
+        # Log the time taken for each image
         end_time = time.time()
         elapsed_time = end_time - start_time
         file.write(f'{file_names[i]} processing time: {elapsed_time:.2f} seconds\n')
 
+    # Log the total processing time
     total_end_time = time.time()
     total_elapsed_time = total_end_time - total_start_time
     file.write(f'Total processing time: {total_elapsed_time:.2f} seconds\n')
