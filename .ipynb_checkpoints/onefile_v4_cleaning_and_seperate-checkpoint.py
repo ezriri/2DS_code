@@ -27,7 +27,6 @@ from scipy.ndimage import binary_fill_holes
 from skimage import measure
 import tensorflow as tf
 
-from numba import jit
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ## path to raw h5
 # 2ds !! be careful of channels
@@ -45,6 +44,14 @@ fill_hole_threshold = 5 # max number pixels contained within particle that is fi
 minimum_area = 15 # very quick metric to stop the processing of particles with area < 15 pixels
 desired_image_size = 200 # (assume we want a square image) 200 x 200 for 
 # - # - # - # - # - # - # - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - #
+''' practice on 1 file '''
+file_list = '/gws/nopw/j04/dcmex/users/ezriab/raw_h5/2ds/ch_0/Export_base220730153000.h5'
+file_names = 'Export_base220730153000.h5'
+save_path = base_save_path+'processed_images/2ds/ch_0/'
+particle_type = 'ch0'
+length_threshold = 100
+pixel_resolution = 10 # mu for 2DS
+'''
 if os.path.exists(path):
     # get string of full path + filenames in specif location
     file_list = glob(path+'Export_base*.h5') 
@@ -76,6 +83,8 @@ elif 'hvps' in file_list[0]:
     #save_path = base_save_path+'processed_stats/hvps/'
     save_path = base_save_path+'processed_images/2ds/hvps/'
     particle_type = 'hvps'
+'''
+
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 ## functions to make code run smoothly
@@ -83,7 +92,10 @@ def stats_description(bw_crystal, fill_hole_thresh):
     #take binary image, fill in small holes and returns object containing stats about crystal
     
     filled_particle = remove_small_holes(bw_crystal.image, area_threshold=fill_hole_thresh) # fill in voids within binary image - better estimation of stats # may need to be altered
-       
+    
+    # can see the filled in particle if needs be
+    #plt.imshow(filled_particle, cmap='gray')
+    
     if filled_particle.shape[0] < 2 or filled_particle.shape[1] < 2:
         return filled_particle, None
         
@@ -99,7 +111,6 @@ def stats_description(bw_crystal, fill_hole_thresh):
         return filled_particle, None
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## function to calculate truncation of particle
-@jit(nopython=True) # Enables full optimization by numba
 def calc_truncation(particle_coords):
     ## so much simpler, looking at list of coordinates making up a particle, then summing ones in 0 and 127 row - i.e. first + last diode
     lst_first_diode = [coord for coord in particle_coords if coord[0] == 0]
@@ -109,7 +120,10 @@ def calc_truncation(particle_coords):
     n_bottom = len(lst_last_diode)
 
     return n_top, n_bottom # number pixels touching top / bottom respectively
+
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    
+
 ###  set up dataframe, used to extract from raw h5 file + has stats about the particle
 columns = [
     "name",
@@ -133,23 +147,36 @@ columns = [
     ]
 
 #start# outer loop for processing each file ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-for j in range(len(file_list)):
-    ## make folder within correct directory for each file
-    long_date_string = file_names[j][-15:-3]
+#for j in range(len(file_list)):
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+for j in range(1): 
     
+    ## make folder within correct directory for each file
+    #long_date_string = file_names[j][-15:-3]
+    long_date_string = file_names[-15:-3]
+    '''
     if not os.path.exists(save_path+long_date_string):
         os.makedirs(save_path+long_date_string)
     flight_save_loc = save_path+long_date_string+'/'
-        
-    h5_file = h5py.File(file_list[j],'r')
-    print(f'running {file_names[j]}')
+    '''
+
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    if not os.path.exists(save_path+'v4_'+long_date_string):
+        os.makedirs(save_path+'v4_'+long_date_string)
+    flight_save_loc = save_path+'v4_'+long_date_string+'/'
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    
+    #h5_file = h5py.File(file_list[j],'r')
+    h5_file = h5py.File(file_list,'r')
+    print(f'running {file_names}')#[j]}')
     particle_df = pd.DataFrame(columns=columns) # empty df for each day of flights
     
     try:
         h5_image = h5_file['ImageData']
         h5_time = h5_file['ImageTimes']
     except KeyError as e:
-        print(f"Dataset missing in file: {file_names[j]}. Error: {e}")
+        print(f"Dataset missing in file: {file_names}")#[j]}. Error: {e}")
         continue
     
     ##### make xarray of useful time data #####
@@ -159,7 +186,9 @@ for j in range(len(file_list)):
     
     ## make useful datetime format (not seconds since midnight)
     # using the file name for reference
-    date_str = file_names[j][-15:-9] 
+    #date_str = file_names[j][-15:-9] 
+## !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    date_str = file_names[-15:-9] 
     date_day = date_str[-2:]
     
     starting_date = datetime.strptime(date_str, '%y%m%d')
@@ -263,7 +292,7 @@ for j in range(len(file_list)):
                                         "image_trunc": image_trunc,
                                         "aspect_ratio": aspect_ratio_value  
                                         }
-
+                                print(f'{particle_name} done')
                                 one_particle_data_df = pd.DataFrame([one_particle_data])
                                 particle_df = pd.concat([particle_df, one_particle_data_df], ignore_index=True)
                                 file.write(f'{particle_name} stats done \n')
@@ -277,6 +306,7 @@ for j in range(len(file_list)):
                                 ## this is checking the image is not blank - written in seperate txt file
                                 if np.all(imagex == 0):
                                     file.write(f'{particle_name} image is blank - 0s \n')
+                                    #print("The image is blank (all pixels are zero).")
                                 elif np.all(imagex == imagex[0, 0, 0]):
                                     file.write(f'{particle_name} image is blank - constant values \n')
         
@@ -290,9 +320,9 @@ for j in range(len(file_list)):
                     ###################################################################################################
                 #end # inner loop for processing each particle # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
         ## save the stats
-        particle_df.to_csv(f'{flight_save_loc}_flight_{long_date_string}.csv', index=False)
+        particle_df.to_csv(f'{flight_save_loc}v4_flight_{long_date_string}.csv', index=False)
         print(f'flight_{long_date_string} done')
-        
+        '''
         if not os.path.exists(f'{flight_save_loc}flight_{long_date_string}.csv'):
             particle_df.to_csv(f'{flight_save_loc}flight_{long_date_string}.csv', index=False) 
             print(f'flight_{long_date_string}.csv saved sucessfully!')
@@ -300,7 +330,7 @@ for j in range(len(file_list)):
             print("file already exists")
         
         h5_file.close()    
-        
+        '''
         # end # inner loop for processing each slice ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~#
         
     #end# outer loop for processing each file ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    

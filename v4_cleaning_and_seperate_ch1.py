@@ -38,7 +38,7 @@ path_h5_hvps = '/gws/nopw/j04/dcmex/users/ezriab/raw_h5/hvps/'
 base_save_path = '/gws/nopw/j04/dcmex/users/ezriab/'
 # - # - # - # - # - # - # - # - # - # - # - # - EDIT BITS # - # - # - # - # - # -# - # - # - # - # - # -# - #
 
-path = path_h5_ds_0 #################### edit depending on 2ds channel / probe ##############################
+path = path_h5_ds_1 #################### edit depending on 2ds channel / probe ##############################
 ## setting thresholds / res for attaining good particle final images
 fill_hole_threshold = 5 # max number pixels contained within particle that is filled in
 
