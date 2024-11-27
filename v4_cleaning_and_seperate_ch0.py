@@ -60,12 +60,12 @@ if '2ds' in file_list[0]:
     pixel_resolution = 10 # mu for 2DS
     
     if 'ch_0' in file_list[0]:
-        #save_path = base_save_path+'processed_stats/ch_0/'
+        stats_save_path = base_save_path+'processed_stats/ch_0/'
         save_path = base_save_path+'processed_images/2ds/ch_0/'
         particle_type = 'ch0'
 
     elif 'ch_1' in file_list[0]:
-        #save_path = base_save_path+'processed_stats/ch_1/'
+        stats_save_path = base_save_path+'processed_stats/ch_1/'
         save_path = base_save_path+'processed_images/2ds/ch_1/'
         particle_type = 'ch1'
 
@@ -73,8 +73,8 @@ elif 'hvps' in file_list[0]:
     length_threshold = 150 # mu - need this minimum length of max dimension to extract the particle
     pixel_resolution = 150 # mu for HVPS
 
-    #save_path = base_save_path+'processed_stats/hvps/'
-    save_path = base_save_path+'processed_images/2ds/hvps/'
+    stats_save_path = base_save_path+'processed_stats/hvps/'
+    save_path = base_save_path+'processed_images/hvps/'
     particle_type = 'hvps'
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
@@ -188,9 +188,7 @@ for j in range(len(file_list)):
     ## accompanying txt file with info about processing 
     with open(f'{flight_save_loc}running_{long_date_string}.txt', "w") as file:
         # start # inner loop for processing each slice ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
-        for i in range(len(selected_pix_sum)-2):
-        #for i in range(len(selected_pix_sum)-2):
-        
+        for i in range(len(selected_pix_sum)-2):        
             # pull out selected area + do analysis
             one_crystal = h5_file['ImageData'][:,int(selected_pix_sum[i]):int(selected_pix_sum[i+1])] # extract 1 crystal
             
@@ -289,12 +287,9 @@ for j in range(len(file_list)):
                                 file.write(f'{particle_name} image saved \n')
                     ###################################################################################################
                 #end # inner loop for processing each particle # ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ #
-        ## save the stats
-        particle_df.to_csv(f'{flight_save_loc}_flight_{long_date_string}.csv', index=False)
-        print(f'flight_{long_date_string} done')
-        
-        if not os.path.exists(f'{flight_save_loc}flight_{long_date_string}.csv'):
-            particle_df.to_csv(f'{flight_save_loc}flight_{long_date_string}.csv', index=False) 
+        ## save the stats        
+        if not os.path.exists(f'{stats_save_path}flight_{long_date_string}.csv'):
+            particle_df.to_csv(f'{stats_save_path}flight_{long_date_string}.csv', index=False) 
             print(f'flight_{long_date_string}.csv saved sucessfully!')
         else:
             print("file already exists")
