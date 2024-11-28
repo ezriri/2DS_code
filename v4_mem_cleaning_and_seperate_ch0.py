@@ -17,6 +17,7 @@ from datetime import datetime, timedelta
 import h5py ####
 from PIL import Image
 import os
+import psutil
 
 from scipy.ndimage import convolve, label
 from skimage.measure import regionprops, find_contours
@@ -38,7 +39,7 @@ path_h5_hvps = '/gws/nopw/j04/dcmex/users/ezriab/raw_h5/hvps/'
 base_save_path = '/gws/nopw/j04/dcmex/users/ezriab/'
 # - # - # - # - # - # - # - # - # - # - # - # - EDIT BITS # - # - # - # - # - # -# - # - # - # - # - # -# - #
 
-path = path_h5_ds_1 #################### edit depending on 2ds channel / probe ##############################
+path = path_h5_ds_0 #################### edit depending on 2ds channel / probe ##############################
 ## setting thresholds / res for attaining good particle final images
 fill_hole_threshold = 5 # max number pixels contained within particle that is filled in
 
@@ -60,12 +61,12 @@ if '2ds' in file_list[0]:
     pixel_resolution = 10 # mu for 2DS
     
     if 'ch_0' in file_list[0]:
-        stats_save_path = base_save_path+'processed_stats/ch_0/'
+        stats_save_path = base_save_path+'processed_stats/2ds/ch_0/'
         save_path = base_save_path+'processed_images/2ds/ch_0/'
         particle_type = 'ch0'
 
     elif 'ch_1' in file_list[0]:
-        stats_save_path = base_save_path+'processed_stats/ch_1/'
+        stats_save_path = base_save_path+'processed_stats/2ds/ch_1/'
         save_path = base_save_path+'processed_images/2ds/ch_1/'
         particle_type = 'ch1'
 
@@ -77,7 +78,6 @@ elif 'hvps' in file_list[0]:
     save_path = base_save_path+'processed_images/hvps/'
     particle_type = 'hvps'
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-
 ## functions to make code run smoothly
 def stats_description(bw_crystal, fill_hole_thresh):
     #take binary image, fill in small holes and returns object containing stats about crystal
@@ -97,6 +97,12 @@ def stats_description(bw_crystal, fill_hole_thresh):
         return filled_particle, region
     else:
         return filled_particle, None
+
+# - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+## quite important, to see how memory is being used
+def log_memory_usage():
+    process = psutil.Process(os.getpid())
+    print(f"Memory usage: {process.memory_info().rss / 1024**2:.2f} MB")  # RSS in MB
 ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ## function to calculate truncation of particle
 @jit(nopython=True) # Enables full optimization by numba
@@ -133,6 +139,8 @@ columns = [
     ]
 
 #start# outer loop for processing each file ## ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+print('begin processing')
+log_memory_usage()
 for j in range(len(file_list)):
     ## make folder within correct directory for each file
     long_date_string = file_names[j][-15:-3]
@@ -293,7 +301,8 @@ for j in range(len(file_list)):
             print(f'flight_{long_date_string}.csv saved sucessfully!')
         else:
             print("file already exists")
-        
+        print('end of file')
+        log_memory_usage()
         h5_file.close()    
         
         # end # inner loop for processing each slice ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~#
