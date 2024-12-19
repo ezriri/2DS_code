@@ -44,7 +44,7 @@ def reduce_full_df(big_df):
     (~big_df.isnull().any(axis=1))]  # Exclude rows with NaN
     return smaller_df
 
-csv_column_names = ['image_name','number_label','habit']
+csv_column_names = ['image_name','number_label']#,'habit']
 random_csv_dic = dict.fromkeys(csv_column_names)
 
 #### actual sampling + save csv happening here # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
