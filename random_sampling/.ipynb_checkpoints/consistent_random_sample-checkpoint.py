@@ -1,5 +1,4 @@
 ## script to run to do random sample of images, make a csv containing this list and group the images into a folder
-# may need to add in new steps if i have to re-sample again
 
 import random
 import xarray as xr
@@ -13,17 +12,26 @@ import os
 from glob import glob
 import shutil
 
+probe_ds_hvps = '2ds' # '2ds' or 'hvps' # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
+random_save_name = '2ds_3000_030125' # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
+n_sample = 3000 # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
+## images that have already been sampled
+list_csv_already_sampled = ['2ds_2000_010125/2ds_2000_010125.csv'] # need folder it is in also // else pass None
+
+# ~~ do not edit past this point ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 ## which csv? - this only does 1 csv at a time 
 ds_csv = '2ds/all_2ds.csv'
 hvps_csv = 'hvps/particle_stats/all_hvps.csv'
 all_csv = 'all_2ds_hvps.csv'
 data_path = '/gws/nopw/j04/dcmex/users/ezriab/processed_stats/'
 
-full_csv_path = data_path + ds_csv # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
-random_save_name = '2ds_2000_010125' # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
-n_sample = 2000 # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
-
-# ~~ do not edit past this point ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+if probe_ds_hvps == '2ds':
+	full_csv_path = data_path + ds_csv
+elif probe_ds_hvps == 'hvps':
+	full_csv_path = data_path + hvps_csv
+else:
+	print('what probe??')
+	
 save_loc = '/gws/nopw/j04/dcmex/users/ezriab/image_labelling/' # for csv + images to be stored together
 full_save_path = save_loc+random_save_name+'/'
 # make new folder for images + csv 
@@ -50,13 +58,32 @@ random_csv_dic = dict.fromkeys(csv_column_names)
 full_df = pd.read_csv(full_csv_path)
 reduced_df = reduce_full_df(full_df)
 reduced_name_lst = list(reduced_df['name'])
+
+## alredy sampled images, remove here to not sample again
+if list_csv_already_sampled != None:
+    previous_extracted_images = []
+    for already_sampled in list_csv_already_sampled:
+        old_path = os.path.join(save_loc,already_sampled)
+        old_csv_df = pd.read_csv(old_path)
+        old_name_list = list(old_csv_df['image_name'])
+        previous_extracted_images.extend(old_name_list)
+
+    # Original array 
+    arr = np.array(reduced_name_lst) 
+    # Array of items to remove 
+    to_remove = np.array(previous_extracted_images) 
+    # removed items 
+    reduced_name_lst = list(arr[~np.isin(arr, to_remove)]) ## correct list of images, no previously sampled ones
+	
+#######
+
 random.seed(42) # !! v important, means we choose same set images every time. 
 r_sample_list = random.sample(reduced_name_lst, k=n_sample)
 random_csv_dic[csv_column_names[0]] = r_sample_list
 
 random_csv_df = pd.DataFrame.from_dict(random_csv_dic)
 if os.path.exists(full_save_path):
-	random_csv_df.to_csv(f'{full_save_path}{random_save_name}.csv', index=False)
+    random_csv_df.to_csv(f'{full_save_path}{random_save_name}.csv', index=False)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -110,5 +137,5 @@ for name in r_sample_list:
 ## finally move that file 
 for file_path in full_loc_file_list:
     if os.path.exists(file_path) and os.path.exists(full_save_path):
-        shutil.copy(file_path, full_save_path)	
+        shutil.copy(file_path, full_save_path)    
 
