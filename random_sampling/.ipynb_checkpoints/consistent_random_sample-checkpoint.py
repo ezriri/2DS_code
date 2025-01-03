@@ -20,8 +20,8 @@ all_csv = 'all_2ds_hvps.csv'
 data_path = '/gws/nopw/j04/dcmex/users/ezriab/processed_stats/'
 
 full_csv_path = data_path + ds_csv # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
-random_save_name = 'test_random_sample' # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
-n_sample = 10 # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
+random_save_name = '2ds_2000_010125' # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
+n_sample = 2000 # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
 
 # ~~ do not edit past this point ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 save_loc = '/gws/nopw/j04/dcmex/users/ezriab/image_labelling/' # for csv + images to be stored together
@@ -33,15 +33,14 @@ if not os.path.exists(save_loc+random_save_name):
 else:
     print("Folder already exists.")
 
-
 # function to slice out images that don't make the threshold of being viable for the CNN
 def reduce_full_df(big_df):
     smaller_df = big_df[
     (big_df['Euclidean_d_max'] >= 300) &
     (big_df['first_diode_trunc'] == 0) &
     (big_df['last_diode_trunc'] == 0) &
-    (big_df['image_trunc'] == 0) &
-    (~big_df.isnull().any(axis=1))]  # Exclude rows with NaN
+    (big_df['image_trunc'] == 0)]
+    #(~big_df.isnull().any(axis=1))]  # Exclude rows with NaN
     return smaller_df
 
 csv_column_names = ['image_name','number_label']#,'habit']

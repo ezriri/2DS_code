@@ -56,7 +56,7 @@ random_csv_dic[csv_column_names[0]] = r_sample_list
 
 random_csv_df = pd.DataFrame.from_dict(random_csv_dic)
 if os.path.exists(full_save_path):
-	random_csv_df.to_csv(f'{full_save_path}{random_save_name}.csv', index=False)
+    random_csv_df.to_csv(f'{full_save_path}{random_save_name}.csv', index=False)
 
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
@@ -110,5 +110,5 @@ for name in r_sample_list:
 ## finally move that file 
 for file_path in full_loc_file_list:
     if os.path.exists(file_path) and os.path.exists(full_save_path):
-        shutil.copy(file_path, full_save_path)	
+        shutil.copy(file_path, full_save_path)    
 
