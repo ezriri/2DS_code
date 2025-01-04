@@ -27,8 +27,10 @@ data_path = '/gws/nopw/j04/dcmex/users/ezriab/processed_stats/'
 
 if probe_ds_hvps == '2ds':
 	full_csv_path = data_path + ds_csv
+	min_diameter = 300
 elif probe_ds_hvps == 'hvps':
 	full_csv_path = data_path + hvps_csv
+	min_diameter = 3000
 else:
 	print('what probe??')
 	
@@ -42,12 +44,13 @@ else:
     print("Folder already exists.")
 
 # function to slice out images that don't make the threshold of being viable for the CNN
-def reduce_full_df(big_df):
+def reduce_full_df(big_df, thresh_diam):
     smaller_df = big_df[
-    (big_df['Euclidean_d_max'] >= 300) &
+    (big_df['Euclidean_d_max'] >= thresh_diam) &
     (big_df['first_diode_trunc'] == 0) &
     (big_df['last_diode_trunc'] == 0) &
-    (big_df['image_trunc'] == 0)]
+    (big_df['image_trunc'] == 0)&
+    (big_df['aspect_ratio'] <= 10)]
     #(~big_df.isnull().any(axis=1))]  # Exclude rows with NaN
     return smaller_df
 
@@ -56,7 +59,7 @@ random_csv_dic = dict.fromkeys(csv_column_names)
 
 #### actual sampling + save csv happening here # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 full_df = pd.read_csv(full_csv_path)
-reduced_df = reduce_full_df(full_df)
+reduced_df = reduce_full_df(full_df, min_diameter)
 reduced_name_lst = list(reduced_df['name'])
 
 ## alredy sampled images, remove here to not sample again
