@@ -13,10 +13,10 @@ from glob import glob
 import shutil
 
 probe_ds_hvps = '2ds' # '2ds' or 'hvps' # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
-random_save_name = '2ds_3000_030125' # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
-n_sample = 3000 # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
+random_save_name = '2ds_5000_100125' # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
+n_sample = 5000 # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ # ~ 
 ## images that have already been sampled
-list_csv_already_sampled = ['2ds_2000_010125/2ds_2000_010125.csv'] # need folder it is in also // else pass None
+list_csv_already_sampled = ['2ds_2000_010125/2ds_2000_010125.csv', '2ds_3000_030125/2ds_3000_030125.csv'] # need folder it is in also // else pass None
 
 # ~~ do not edit past this point ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 ## which csv? - this only does 1 csv at a time 
