@@ -93,13 +93,13 @@ if os.path.exists(full_save_path):
 #### moving images to be in same folder (bloody nightmare)
 base_img_pth = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/'
 hvps_img_folders = os.listdir(base_img_pth+'hvps/')
-ch0_img_folders = os.listdir(base_img_pth+'2ds/ch_0/')
-ch1_img_folders = os.listdir(base_img_pth+'2ds/ch_1/')
+ch0_img_folders = os.listdir(base_img_pth+'2ds/ch0/')
+ch1_img_folders = os.listdir(base_img_pth+'2ds/ch1/')
 
 ## make dictionary containing file path to every single image
 #dictionaries containing list of all file names
 probe_file_names = ['hvps','ch0','ch1']
-probe_file_extensions = ['hvps/','2ds/ch_0/','2ds/ch_1/']
+probe_file_extensions = ['hvps/','2ds/ch0/','2ds/ch1/']
 probe_file_list = [hvps_img_folders, ch0_img_folders, ch1_img_folders]
 full_file_dic = dict.fromkeys(probe_file_names)
 ## making dictionary each probe + each folder of h5 file + path to each png image
