@@ -62,21 +62,21 @@ if '2ds' in file_list[0]:
     pixel_resolution = 10 # mu for 2DS
     
     if 'ch_0' in file_list[0]:
-        stats_save_path = base_save_path+'processed_stats/2ds/ch_0/v2/'
-        save_path = base_save_path+'processed_images/2ds/ch_0/v2/'
+        stats_save_path = base_save_path+'processed_stats/2ds/ch0/'
+        save_path = base_save_path+'processed_images/2ds/ch0/'
         particle_type = 'ch0'
 
     elif 'ch_1' in file_list[0]:
-        stats_save_path = base_save_path+'processed_stats/2ds/ch_1/v2/'
-        save_path = base_save_path+'processed_images/2ds/ch_1/v2/'
+        stats_save_path = base_save_path+'processed_stats/2ds/ch1/'
+        save_path = base_save_path+'processed_images/2ds/ch1/'
         particle_type = 'ch1'
 
 elif 'hvps' in file_list[0]:
     length_threshold = 1500 # mu - need this minimum length of max dimension to extract the particle
     pixel_resolution = 150 # mu for HVPS
 
-    stats_save_path = base_save_path+'processed_stats/hvps/v2/'
-    save_path = base_save_path+'processed_images/hvps/v2/'
+    stats_save_path = base_save_path+'processed_stats/hvps/'
+    save_path = base_save_path+'processed_images/hvps/'
     particle_type = 'hvps'
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 ## functions to make code run smoothly
