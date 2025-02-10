@@ -18,7 +18,7 @@ from numba import jit
 import h5py
 
 ## need to go through folders, days which have more than 1 folder, need to have extension _1 or _2 added onto each name and folder 
-folder_extension = '2ds/ch0/' ## 'hvps/' '2ds/ch0/' '2ds/ch1/' !!!!!!!!!!!!!!!!!!!!!!!
+folder_extension = '2ds/ch1/' ## 'hvps/' '2ds/ch0/' '2ds/ch1/' !!!!!!!!!!!!!!!!!!!!!!!
 
 stats_path = '/gws/nopw/j04/dcmex/users/ezriab/processed_stats/' # !!!!!!!!!!!!!!!!!!!!!!!
 image_path = '/gws/nopw/j04/dcmex/users/ezriab/processed_images/' # !!!!!!!!!!!!!!!!!!!!!!!
@@ -104,7 +104,7 @@ for key in days_dic:
                 # time for the re-naming
                 os.rename(f'{image_folder}{specif_img}', f'{image_folder}{new_name}')
 
-        print(f'updated {specif_folder}'
+        print(f'updated {specif_folder}')
         '''
         ## re-name the image folders
         og_folder_name = f'{image_path}{specif_folder}'
