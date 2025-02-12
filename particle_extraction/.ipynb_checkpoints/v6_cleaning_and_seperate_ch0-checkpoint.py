@@ -32,7 +32,7 @@ import tensorflow as tf
 
 from numba import jit
 # - # - # - # - # - # - # - # - # - # - # - # - EDIT BITS # - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - # - # - # -# - # - # - # - # - # -# - # - # - # - # 
-particle_type = 'hvps' #'ch0', 'ch1', 'hvps' ###  depending on 2ds channel / probe ##############################
+particle_type = 'ch0' #'ch0', 'ch1', 'hvps' ###  depending on 2ds channel / probe ##############################
 
 ## setting thresholds / res for attaining good particle final images
 fill_hole_threshold = 5 # max number pixels contained within particle that is filled in
